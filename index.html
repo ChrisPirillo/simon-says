@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- VITAL SEO AND CONFIGURATION TAGS (Should be first in <head>) -->
+    <meta charset="UTF-8">
+    <title>Simon Says | A Classic Memory Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO META TAGS -->
+    <meta name="description" content="Test your memory with Simon Says, a classic arcade game reimagined. Follow the sequence of lights and sounds. How long can you last? Features spinning, color-shifting, and randomizing modes for an extra challenge.">
+    <meta name="keywords" content="simon says, memory game, online game, free game, retro game, brain game, arcade">
+    <meta name="author" content="Chris Pirillo">
+    <link rel="canonical" href="https://pirillo.com/arcade/simon-says.html">
+
+    <!-- OPEN GRAPH (FOR SOCIAL SHARING - FACEBOOK, ETC.) -->
+    <meta property="og:title" content="Simon Says | A Classic Memory Game">
+    <meta property="og:description" content="Test your memory with this classic game of lights and sounds. How high can you score?">
+    <meta property="og:image" content="https://pirillo.com/arcade/images/simon-says.png">
+    <meta property="og:url" content="https://pirillo.com/arcade/simon-says.html">
+    <meta property="og:site_name" content="Chris Pirillo's Arcade">
+    <meta property="og:type" content="website">
+
+    <!-- TWITTER CARD (FOR TWITTER SHARING) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@ChrisPirillo">
+    <meta name="twitter:creator" content="@ChrisPirillo">
+    <meta name="twitter:title" content="Simon Says | A Classic Memory Game">
+    <meta name="twitter:description" content="Test your memory with this classic game of lights and sounds. How high can you score?">
+    <meta name="twitter:image" content="https://pirillo.com/arcade/images/simon-says.png">
+
+    <!-- PERFORMANCE HINTS: Pre-connect to critical third-party origins -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
+    
+    <!-- PERFORMANCE HINTS: Preload critical assets -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.min.js" as="script">
+    
+    <!-- STYLESHEETS: Non-blocking font load -->
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"></noscript>
+    
+    <!-- CORE SCRIPTS (Tailwind must be blocking to prevent FOUC) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.min.js" defer></script>
+    
+    <!-- GOOGLE ANALYTICS -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1CQ4D3VQ3L"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-1CQ4D3VQ3L');
+    </script>
+    
+    <!-- JSON-LD STRUCTURED DATA -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoGame",
+      "name": "Simon Says",
+      "url": "https://pirillo.com/arcade/simon-says.html",
+      "author": {
+        "@type": "Person",
+        "name": "Chris Pirillo"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Chris Pirillo",
+        "url": "https://pirillo.com/"
+      },
+      "image": "https://pirillo.com/arcade/images/simon-says.png",
+      "description": "A classic electronic memory game where players must repeat a growing sequence of lights and sounds. The game features multiple modes including spinning, color-shifting, and randomizing for added difficulty.",
+      "gamePlatform": "Web-based",
+      "playMode": "SinglePlayer",
+      "applicationCategory": "Game",
+      "operatingSystem": "Any with a web browser"
+    }
+    </script>
+
+    <!-- INLINE CRITICAL CSS -->
+    <style>
+        :root {
+            --green: #00a74a;
+            --red: #9f0f17;
+            --yellow: #cca707;
+            --blue: #094a8f;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            background-color: #374151;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+            overflow: hidden;
+        }
+        .simon-container {
+            width: 90vw;
+            height: 90vw;
+            max-width: 500px;
+            max-height: 500px;
+            position: relative;
+            border-radius: 50%;
+            background: #333;
+            box-shadow: 0 15px 25px rgba(0,0,0,0.3), inset 0 0 25px 10px rgba(0,0,0,0.6);
+            transition: transform 0.2s linear;
+        }
+        .simon-container.rotate-active {
+            animation: spin 30s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .simon-pad {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            cursor: pointer;
+            border: 8px solid #333;
+            transition: all 0.08s ease-in-out;
+            box-shadow: inset -5px -5px 12px rgba(0,0,0,0.5), inset 2px 2px 8px rgba(255,255,255,0.1);
+        }
+        .simon-pad.active {
+            filter: brightness(2.2);
+            transform: translateY(2px) scale(0.98);
+            z-index: 10;
+        }
+        #green.active { box-shadow: inset -3px -3px 10px rgba(0,0,0,0.3), 0 0 35px 8px rgba(0, 255, 80, 0.7); }
+        #red.active { box-shadow: inset -3px -3px 10px rgba(0,0,0,0.3), 0 0 35px 8px rgba(255, 20, 30, 0.7); }
+        #yellow.active { box-shadow: inset -3px -3px 10px rgba(0,0,0,0.3), 0 0 35px 8px rgba(255, 255, 0, 0.7); }
+        #blue.active { box-shadow: inset -3px -3px 10px rgba(0,0,0,0.3), 0 0 35px 8px rgba(20, 120, 255, 0.7); }
+        #green { top: 0; left: 0; background-color: var(--green); border-top-left-radius: 100%; }
+        #red { top: 0; right: 0; background-color: var(--red); border-top-right-radius: 100%; }
+        #yellow { bottom: 0; left: 0; background-color: var(--yellow); border-bottom-left-radius: 100%; }
+        #blue { bottom: 0; right: 0; background-color: var(--blue); border-bottom-right-radius: 100%; }
+        .center-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 45%;
+            height: 45%;
+            background: #282828;
+            border-radius: 50%;
+            border: 12px solid #333;
+            box-shadow: inset 0 8px 15px rgba(0,0,0,0.6), 0 2px 5px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 20;
+        }
+        header {
+            position: absolute;
+            top: clamp(1rem, 5vh, 3rem);
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            margin: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .title-hidden { opacity: 0; pointer-events: none; }
+        #menu-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            cursor: pointer;
+            background: rgba(0,0,0,0.3);
+            border-radius: 50%;
+            padding: 8px;
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+        #menu-toggle.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8);
+        }
+        #menu-toggle svg { width: 32px; height: 32px; stroke: white; }
+        #settings-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 300px;
+            height: 100%;
+            background-color: #2d3748; /* gray-800 */
+            z-index: 1000;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            padding: 2rem;
+            color: white;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+        }
+        #settings-sidebar.open { transform: translateX(0); }
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .sidebar-header h2 {
+            margin-bottom: 0;
+        }
+        #close-menu {
+            cursor: pointer;
+            padding: 8px;
+        }
+        #close-menu svg {
+            width: 28px;
+            height: 28px;
+            stroke: #a0aec0; /* gray-400 */
+            transition: stroke 0.2s;
+        }
+        #close-menu:hover svg {
+            stroke: white;
+        }
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            transition: opacity 0.3s;
+        }
+        .toggle-switch.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .toggle-switch.disabled label {
+            cursor: not-allowed;
+        }
+        .toggle-switch label { font-size: 1.1rem; cursor: pointer; }
+        .toggle-switch input { display: none; }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #4a5568; /* gray-600 */
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px; width: 26px;
+            left: 4px; bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #48bb78; /* green-500 */ }
+        input:disabled + .slider { background-color: #718096; /* gray-500 */ cursor: not-allowed; }
+        input:checked + .slider:before { transform: translateX(26px); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 class="text-4xl md:text-6xl font-bold text-white mb-6 text-center">Simon Says</h1>
+    </header>
+
+    <nav>
+        <!-- Hamburger Menu Icon -->
+        <button id="menu-toggle" aria-label="Open Settings Menu">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" role="img" aria-hidden="true">
+                <title>Menu Icon</title>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+        </button>
+    </nav>
+    
+
+    <!-- Settings Sidebar -->
+    <aside id="settings-sidebar">
+        <div class="sidebar-header">
+            <h2 class="text-3xl font-bold">Settings</h2>
+            <button id="close-menu" aria-label="Close Settings Menu">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" role="img" aria-hidden="true">
+                    <title>Close Icon</title>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="toggle-switch">
+            <label for="rotate-toggle">Spin</label>
+            <div class="switch">
+                <input type="checkbox" id="rotate-toggle">
+                <span class="slider"></span>
+            </div>
+        </div>
+        <div class="toggle-switch">
+            <label for="random-toggle">Random Rotate</label>
+            <div class="switch">
+                <input type="checkbox" id="random-toggle">
+                <span class="slider"></span>
+            </div>
+        </div>
+        <div class="toggle-switch">
+            <label for="shift-toggle">Color Shift</label>
+            <div class="switch">
+                <input type="checkbox" id="shift-toggle">
+                <span class="slider"></span>
+            </div>
+        </div>
+        <button id="reset-colors-btn" class="mt-4 px-4 py-2 w-full bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white transition-all duration-200 hidden">
+            Reset Colors
+        </button>
+    </aside>
+
+    <main>
+        <section class="simon-container" aria-label="Simon Game Board">
+            <div id="green" class="simon-pad" data-pad="0" role="button" aria-label="Green Pad"></div>
+            <div id="red" class="simon-pad" data-pad="1" role="button" aria-label="Red Pad"></div>
+            <div id="yellow" class="simon-pad" data-pad="2" role="button" aria-label="Yellow Pad"></div>
+            <div id="blue" class="simon-pad" data-pad="3" role="button" aria-label="Blue Pad"></div>
+
+            <div class="center-circle" aria-live="polite">
+                <div id="score-display" class="text-5xl font-bold text-gray-300" aria-label="Current Score">--</div>
+                <div id="message-display" class="text-sm text-gray-400 mt-2 h-4">Loading Audio...</div>
+                <button id="start-btn" class="mt-4 px-6 py-2 bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    Loading...
+                </button>
+            </div>
+        </section>
+    </main>
+    
+    <!-- NOTE: The following JavaScript block has been kept IDENTICAL to the original file as per strict instructions. -->
+    <script>
+        window.onload = () => {
+            const startBtn = document.getElementById('start-btn');
+            const messageDisplay = document.getElementById('message-display');
+            const titleElement = document.querySelector('h1');
+            const simonContainer = document.querySelector('.simon-container');
+            const pads = document.querySelectorAll('.simon-pad');
+
+            // --- Sidebar & Settings Elements ---
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.getElementById('settings-sidebar');
+            const closeMenu = document.getElementById('close-menu');
+            const rotateToggle = document.getElementById('rotate-toggle');
+            const randomToggle = document.getElementById('random-toggle');
+            const shiftToggle = document.getElementById('shift-toggle');
+            const settingToggles = [rotateToggle, randomToggle, shiftToggle];
+            const resetColorsBtn = document.getElementById('reset-colors-btn');
+
+            // --- Game State & Data ---
+            let isRotateOn = false;
+            let isRandomOn = false;
+            let isShiftOn = false;
+            let randomRotationInterval;
+            let originalColorData = [];
+            let gameInProgress = false;
+             let colorData = [
+                { color: getComputedStyle(document.documentElement).getPropertyValue('--green'), tone: 261.63 }, // C4
+                { color: getComputedStyle(document.documentElement).getPropertyValue('--red'), tone: 329.63 }, // E4
+                { color: getComputedStyle(document.documentElement).getPropertyValue('--yellow'), tone: 392.00 }, // G4
+                { color: getComputedStyle(document.documentElement).getPropertyValue('--blue'), tone: 523.25 }  // C5
+            ];
+            originalColorData = JSON.parse(JSON.stringify(colorData));
+
+
+            // --- Preview & Settings Functions (defined globally in window.onload) ---
+            function shiftColors() {
+                for (let i = colorData.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [colorData[i], colorData[j]] = [colorData[j], colorData[i]];
+                }
+                applyColors();
+            }
+
+            function resetColors() {
+                colorData = JSON.parse(JSON.stringify(originalColorData));
+                applyColors();
+            }
+
+            function applyColors() {
+                 pads.forEach((pad, index) => {
+                    pad.style.backgroundColor = colorData[index].color;
+                });
+            }
+            
+            let currentAngle = 0;
+            function startRandomRotation() {
+                let rotationSpeed = (Math.random() - 0.5) * 4; // -2 to +2
+                randomRotationInterval = setInterval(() => {
+                    if (Math.random() < 0.05) {
+                        rotationSpeed = (Math.random() - 0.5) * 4;
+                    }
+                    currentAngle += rotationSpeed;
+                    simonContainer.style.transform = `rotate(${currentAngle}deg)`;
+                }, 50);
+            }
+
+            function stopRandomRotation() {
+                clearInterval(randomRotationInterval);
+                randomRotationInterval = null;
+                simonContainer.style.transition = 'transform 0.3s ease-out';
+                simonContainer.style.transform = `rotate(0deg)`;
+                setTimeout(() => {
+                     simonContainer.style.transition = 'transform 0.2s linear';
+                }, 300);
+            }
+
+            // --- Event Listeners ---
+            document.querySelectorAll('.switch').forEach(sw => {
+                sw.addEventListener('click', () => {
+                    const input = sw.querySelector('input[type="checkbox"]');
+                    if (input && !input.disabled) {
+                        input.checked = !input.checked;
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                });
+            });
+            
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.add('open');
+                menuToggle.classList.add('hidden');
+            });
+            
+            closeMenu.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                setTimeout(() => {
+                    if (!gameInProgress) {
+                         menuToggle.classList.remove('hidden');
+                    }
+                }, 300);
+            });
+
+            rotateToggle.addEventListener('change', (e) => {
+                isRotateOn = e.target.checked;
+                if(isRotateOn) {
+                    simonContainer.classList.add('rotate-active');
+                    if (randomToggle.checked) {
+                        randomToggle.checked = false;
+                        randomToggle.dispatchEvent(new Event('change'));
+                    }
+                    if(randomRotationInterval) stopRandomRotation();
+                } else {
+                    simonContainer.classList.remove('rotate-active');
+                }
+            });
+
+            randomToggle.addEventListener('change', (e) => {
+                isRandomOn = e.target.checked;
+                 if (isRandomOn) {
+                    if (rotateToggle.checked) {
+                        rotateToggle.checked = false;
+                        rotateToggle.dispatchEvent(new Event('change'));
+                    }
+                    startRandomRotation();
+                } else {
+                    stopRandomRotation();
+                }
+            });
+
+            shiftToggle.addEventListener('change', (e) => {
+                isShiftOn = e.target.checked;
+                if (isShiftOn) {
+                    shiftColors();
+                    resetColorsBtn.classList.remove('hidden');
+                } else {
+                    resetColors();
+                    resetColorsBtn.add('hidden');
+                }
+            });
+
+            resetColorsBtn.addEventListener('click', () => {
+                if (shiftToggle.checked) {
+                    shiftToggle.checked = false;
+                    shiftToggle.dispatchEvent(new Event('change'));
+                }
+            });
+
+
+            const maxWaitTime = 5000;
+            const checkInterval = 100;
+            let timeWaited = 0;
+
+            const toneCheckInterval = setInterval(() => {
+                if (typeof Tone !== 'undefined') {
+                    clearInterval(toneCheckInterval);
+                    initializeGame();
+                } else {
+                    timeWaited += checkInterval;
+                    if (timeWaited >= maxWaitTime) {
+                        clearInterval(toneCheckInterval);
+                        console.error("Tone.js failed to load within the time limit.");
+                        messageDisplay.textContent = "Audio Error. Refresh.";
+                        startBtn.textContent = "Error";
+                    }
+                }
+            }, checkInterval);
+
+            function initializeGame() {
+                startBtn.disabled = false;
+                startBtn.textContent = 'Start';
+                messageDisplay.textContent = 'Press Start';
+
+                const scoreDisplay = document.getElementById('score-display');
+                
+                let sequence = [];
+                let playerSequence = [];
+                let score = 0;
+                let isPlayerTurn = false;
+                let synth;
+
+                startBtn.addEventListener('click', startGame);
+                pads.forEach(pad => {
+                    pad.addEventListener('click', () => handlePlayerInput(pad));
+                    pad.addEventListener('touchstart', (e) => { e.preventDefault(); handlePlayerInput(pad); }, { passive: false });
+                });
+
+                async function startGame() {
+                    if (!synth) {
+                        await Tone.start();
+                        synth = new Tone.Synth().toDestination();
+                    }
+
+                    gameInProgress = true;
+                    settingToggles.forEach(toggle => {
+                        if(toggle) {
+                            toggle.disabled = true;
+                            toggle.closest('.toggle-switch').classList.add('disabled');
+                        }
+                    });
+                    resetColorsBtn.disabled = true;
+                    sidebar.classList.remove('open');
+                    menuToggle.classList.add('hidden');
+                    
+                    if (isRandomOn && !randomRotationInterval) startRandomRotation();
+
+                    sequence = [];
+                    playerSequence = [];
+                    score = 0;
+                    isPlayerTurn = false;
+                    
+                    updateScoreDisplay(0);
+                    messageDisplay.textContent = 'Watch carefully...';
+                    titleElement.classList.add('title-hidden');
+                    startBtn.classList.add('hidden');
+
+                    setTimeout(cpuTurn, 1000);
+                }
+
+                function cpuTurn() {
+                    isPlayerTurn = false;
+                    playerSequence = [];
+                    messageDisplay.textContent = 'Watch carefully...';
+                    
+                    const newStep = Math.floor(Math.random() * 4);
+                    sequence.push(newStep);
+                    
+                    updateScoreDisplay(sequence.length - 1);
+                    playSequence();
+                }
+
+                async function playSequence() {
+                    pads.forEach(p => p.style.pointerEvents = 'none');
+                    for (const step of sequence) {
+                        await new Promise(resolve => setTimeout(resolve, 600)); 
+                        flashPad(step);
+                    }
+                    pads.forEach(p => p.style.pointerEvents = 'auto');
+                    isPlayerTurn = true;
+                    messageDisplay.textContent = 'Your Turn!';
+                }
+
+                function handlePlayerInput(pad) {
+                    if (!isPlayerTurn || !gameInProgress) return;
+                    const padIndex = parseInt(pad.dataset.pad);
+                    flashPad(padIndex);
+                    playerSequence.push(padIndex);
+                    checkPlayerSequence(padIndex);
+                }
+
+                function checkPlayerSequence(lastInput) {
+                    const currentStepIndex = playerSequence.length - 1;
+
+                    if (lastInput !== sequence[currentStepIndex]) {
+                        gameOver();
+                        return;
+                    }
+
+                    if (playerSequence.length === sequence.length) {
+                        score = sequence.length;
+                        updateScoreDisplay(score);
+                        isPlayerTurn = false; 
+                        
+                        if(isShiftOn) shiftColors();
+
+                        setTimeout(cpuTurn, 1200);
+                    }
+                }
+
+                function gameOver() {
+                    gameInProgress = false;
+                    isPlayerTurn = false;
+                    settingToggles.forEach(toggle => {
+                        if(toggle) {
+                            toggle.disabled = false;
+                            toggle.closest('.toggle-switch').classList.remove('disabled');
+                        }
+                    });
+                    resetColorsBtn.disabled = false;
+                    if (isRandomOn) stopRandomRotation();
+                    
+                    if(!sidebar.classList.contains('open')) {
+                        menuToggle.classList.remove('hidden');
+                    }
+
+
+                    messageDisplay.textContent = 'Game Over!';
+                    startBtn.textContent = 'Try Again';
+                    startBtn.classList.remove('hidden');
+
+                    if (synth) synth.triggerAttackRelease("A1", "0.5s");
+
+                    document.body.style.backgroundColor = '#7f1d1d';
+                    setTimeout(() => { document.body.style.backgroundColor = '#374151'; }, 300);
+                }
+
+                function flashPad(index) {
+                    const pad = pads[index];
+                    if (!pad) return;
+                    if(synth) synth.triggerAttackRelease(colorData[index].tone, "8n");
+                    pad.classList.add('active');
+                    setTimeout(() => pad.classList.remove('active'), 350);
+                }
+
+                function updateScoreDisplay(newScore) {
+                    scoreDisplay.textContent = newScore === 0 ? '0' : newScore;
+                }
+            }
+        };
+    </script>
+</body>
+</html>
